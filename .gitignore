@@ -1,0 +1,5 @@
+odroidn2/
+rock64/
+ansible.log
+*.retry
+*.swp

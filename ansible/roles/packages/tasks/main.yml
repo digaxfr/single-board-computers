@@ -1,0 +1,8 @@
+---
+- name: packages | install packages
+  apt:
+    autoclean: yes
+    autoremove: yes
+    name: "{{ packages_list }}"
+    state: present
+    update_cache: yes

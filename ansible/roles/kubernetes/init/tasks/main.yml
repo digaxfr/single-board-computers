@@ -1,0 +1,26 @@
+---
+- name: kubernetes/init | figure out if I already am a cluster
+  stat:
+    path: /etc/kubernetes/pki
+  register: _stat
+
+- name: kubernetes/init | init a kube cluster
+  command: kubeadm init --pod-network-cidr=10.0.0.0/24 --service-cidr 10.0.1.0/24
+  when: not _stat.stat.exists
+
+- name: kubernetes/init | kubeconfig dir
+  file:
+    path: /root/.kube
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+
+- name: kubernetes/init | copy kubeconfig
+  copy:
+    remote_src: yes
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: 0600

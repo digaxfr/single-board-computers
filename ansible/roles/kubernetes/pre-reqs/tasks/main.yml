@@ -1,0 +1,19 @@
+---
+- name: kubernetes/pre-reqs | figure out if we are on armbian
+  shell: systemctl list-unit-files | grep armbian
+  register: _prereqs_armbian
+  ignore_errors: yes
+
+- block:
+  - name: kubernetes/pre-reqs | disable swap
+    command: swapoff -a
+
+  - name: kubernetes/pre-reqs | systemctl stop
+    systemd:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+    - armbian-ramlog
+    - armbian-zram-config
+  when: _prereqs_armbian.rc == 0

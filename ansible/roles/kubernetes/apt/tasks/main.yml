@@ -1,0 +1,33 @@
+---
+- block:
+  - name: kubernetes/apt | mktemp
+    command: mktemp -d
+    register: _mktemp
+
+  - name: kubernetes/apt | copy apt key
+    copy:
+      src: apt-key.gpg
+      dest: "{{ _mktemp.stdout }}"
+
+  - name: kubernetes/apt | add apt key
+    apt_key:
+      file: "{{ _mktemp.stdout }}/apt-key.gpg"
+      state: present
+
+  - name: kubernetes/apt | add apt repo
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+
+  - name: kubernetes/apt | install packages
+    apt:
+      name: "{{ kubernetes_packages }}"
+      state: present
+
+  - name: kubernetes/apt | mark packages
+    command: apt-mark hold {{ kubernetes_packages | join(' ') }}
+
+  always:
+  - name: kubernetes/apt | cleanup
+    file:
+      name: "{{ _mktemp.stdout }}"
+      state: absent

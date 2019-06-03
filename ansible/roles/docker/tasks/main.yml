@@ -1,0 +1,46 @@
+---
+- block:
+  - name: docker | mktemp
+    command: mktemp -d
+    register: _mktemp
+
+  - name: docker | get gpg key
+    copy:
+      src: docker_apt_key.gpg
+      dest: "{{ _mktemp.stdout }}"
+
+  - name: docker | apply gpg key
+    apt_key:
+      file: "{{ _mktemp.stdout }}/docker_apt_key.gpg"
+      state: present
+
+  always:
+  - name: docker | cleanup
+    file:
+      name: "{{ _mktemp.stdout }}"
+      state: absent
+
+- name: docker | add apt repo
+  apt_repository:
+    repo: deb [arch=arm64] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
+
+- name: docker | install docker-ce
+  apt:
+    name: docker-ce
+    state: present
+    state: present
+
+- name: docker | template out daemon.json
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+  notify: restart docker
+
+- name: docker | enable systemd
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: docker | flush handlers
+  meta: flush_handlers
