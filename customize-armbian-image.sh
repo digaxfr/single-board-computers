@@ -27,6 +27,11 @@ if [ ! -f "Debian_stretch_default.7z" ]; then
 fi
 7z -y x *.7z
 
+# Reminder: we can expand an image by
+# - dd if=/dev/zero bs=1M count=2048 >> file.img
+# - Resize the partition with parted
+# - Expand the filesystem when mounted to a loop device
+
 # Ceate the loopback device, mount it, and set up the chroot
 LOOP=$(/usr/sbin/losetup -f)
 /usr/sbin/losetup -P ${LOOP} *.img
