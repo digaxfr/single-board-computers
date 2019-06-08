@@ -13,7 +13,7 @@
     command: sed -i "s/192.168.0.0\/16/10.0.0.0\/24/g" {{ _mktemp.stdout }}/calico.yaml
 
   - name: kubernetes/cni-calico | regex changes
-    command: sed -i "s/calico\/node:v3.7.2/calico\/node:latest-arm64/g" {{ _mktemp.stdout }}/calico.yaml
+    command: sed -i "s/calico\/node:v3.7.2/calico\/node:release-v3.7/g" {{ _mktemp.stdout }}/calico.yaml
 
   - name: kubernetes/cni-calico | apply
     command: kubectl apply -f {{ _mktemp.stdout }}/calico.yaml

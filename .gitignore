@@ -3,3 +3,4 @@ rock64/
 ansible.log
 *.retry
 *.swp
+debs/*.deb
