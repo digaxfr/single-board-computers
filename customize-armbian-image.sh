@@ -85,7 +85,6 @@ chroot mnt rm /root/.not_logged_in_yet
 if [ -f "../debs/linux-image-${BOARD}_5.88_arm64.deb" ]; then
     chroot mnt dpkg -i /tmp/linux-image-odroidn2_5.88_arm64.deb
     chroot mnt rm /tmp/linux-image-odroidn2_5.88_arm64.deb
-
 fi
 chroot mnt sync
 
