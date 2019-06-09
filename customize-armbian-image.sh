@@ -35,7 +35,11 @@ dd if=/dev/zero bs=1M count=2048 >> *.img
     echo n      # Create new partition
     echo p      # Primary
     echo 1      # Partitoin 1
-    echo 8192   # Start at sector 8192
+    if [ "${BOARD}" == "odroidn2" ]; then
+        echo 8192   # Start at sector 8192
+    elif [ "${BOARD}" == "rock64" ]; then
+        echo 32768  # Start at sector 32768
+    fi
     echo ""     # End sector is 100%
     echo w      # Write changes
 ) | fdisk *.img
