@@ -3,6 +3,7 @@
   gather_facts: yes
   become: yes
   roles:
+  - hostname
   - packages
   - docker
   - kubernetes/apt
