@@ -1,2 +1,5 @@
 odroidn2-01.srv.dchin.dev
 rock64-01.srv.dchin.dev
+
+[dns]
+rock64-01.srv.dchin.dev

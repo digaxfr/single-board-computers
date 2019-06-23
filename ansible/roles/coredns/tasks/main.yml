@@ -1,0 +1,41 @@
+---
+# docker module not used because it requires dependencies
+
+- name: coredns | check if the docker image exists
+  command: >
+    docker inspect {{ coredns_image }}:{{ coredns_tag }}
+  register: _coredns_image
+  ignore_errors: yes
+
+- name: coredns | pull docker image
+  command: >
+    docker pull {{ coredns_image }}:{{ coredns_tag }}
+  when: _coredns_image.failed == true
+
+- name: coredns | check if the container exists already
+  command: >
+    docker inspect coredns
+  register: _coredns_container
+  ignore_errors: yes
+
+- name: coredns | start coredns container
+  command: >
+    docker run -d \
+    --restart unless-stopped \
+    --publish 1053:1053/udp \
+    --name coredns \
+    {{ coredns_image }}:{{ coredns_tag }} \
+    -dns.port=1053
+  when: _coredns_container.failed == true
+
+# Because this is just the default plugin only, we can 'dig' for a known
+# endpoint.
+# TODO: https://coredns.io/plugins/health/
+- name: coredns | ensure coredns healthcheck is passing
+  command: >
+    dig @{{ inventory_hostname }} -p 1053 +noall +additional whoami.example.org
+  register: _coredns_health_check
+
+- name: coredns | check if we pass
+  fail:
+  when: _coredns_health_check.stdout_lines | length == 0
