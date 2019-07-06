@@ -4,3 +4,5 @@ ansible.log
 *.retry
 *.swp
 debs/*.deb
+rpi4b/
+wpa_supplicant.conf
