@@ -5,7 +5,6 @@ packages_list:
 - curl
 - git
 - gnupg2
-- golang-1.11
 - htop
 - software-properties-common
 - vim

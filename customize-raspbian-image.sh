@@ -63,23 +63,23 @@ mount -t devpts devpts mnt/dev/pts
 mount --bind /etc/resolv.conf mnt/etc/resolv.conf
 
 # Make the customizations required
-chroot mnt usermod -l armbian pi
-chroot mnt usermod -m -d /home/armbian armbian
-chroot mnt passwd --delete armbian
-chroot mnt groupmod -n armbian pi
+chroot mnt usermod -l digaxfr pi
+chroot mnt usermod -m -d /home/digaxfr digaxfr
+chroot mnt passwd --delete digaxfr
+chroot mnt groupmod -n digaxfr pi
 chroot mnt apt-get -y upgrade
 chroot mnt apt-get -y install openssh-server vim
 chroot mnt apt-get clean
 chroot mnt systemctl enable ssh
-chroot mnt mkdir -p /home/armbian/.ssh
-chroot mnt chmod 0700 /home/armbian/.ssh
-chroot mnt tee /home/armbian/.ssh/authorized_keys << "EOF"
+chroot mnt mkdir -p /home/digaxfr/.ssh
+chroot mnt chmod 0700 /home/digaxfr/.ssh
+chroot mnt tee /home/digaxfr/.ssh/authorized_keys << "EOF"
 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHYU5ohkrcI9PZHZZTFWkhlKfCfp5rsEslWDyzz3w3hYzec/fOiP92M29Ck/JS35N1BZ+vZZ7JOqjxmXhADt6V8= dchin@failxps.localdomain
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDp0gFvIt68xd9n9N7GKeu/ubNkJgCVq41yHPOTVv7u3c9H5tPM8dHK2VdpzinqYk2WkSVqp8zUqXvqawi+Tmdma2PA/Xzo4WWe1hm/y9V6hwsOOQxrE/cYzp6ZjthkeGAI4xwknIF7N81hw6KUlEVDAtvs78ZvNDM1M3+lGp5MuEumXmnoDe9beUd8Eg3MXZPQd/gt1zMUdspr5m+GtUwi0pgKu3Dfsp8RKaTH5+4Y+zCUW43gpl0eiuxtkALNOmb1psRB5YDmF2t9PiJ/0C2Z2WQWhn4Gz5m1bi9KUTKUNlwesN589frIjYTy7NohsPvum1bsKD4bUjLCiM9Y//f dchin@failxps
 EOF
-chroot mnt chmod 600 /home/armbian/.ssh/authorized_keys
-chroot mnt chown armbian: /home/armbian/.ssh/
-chroot mnt chown armbian: /home/armbian/.ssh/authorized_keys
+chroot mnt chmod 600 /home/digaxfr/.ssh/authorized_keys
+chroot mnt chown digaxfr: /home/digaxfr/.ssh/
+chroot mnt chown digaxfr: /home/digaxfr/.ssh/authorized_keys
 chroot mnt sed -i 's/\%sudo[ \t]ALL=(ALL:ALL) ALL/%sudo   ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers
 if [ -f "../wpa_supplicant.conf" ]; then
     cp ../wpa_supplicant.conf mnt/etc/wpa_supplicant/wpa_supplicant.conf

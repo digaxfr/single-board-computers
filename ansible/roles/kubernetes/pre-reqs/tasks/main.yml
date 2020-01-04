@@ -17,3 +17,11 @@
     - armbian-ramlog
     - armbian-zram-config
   when: _prereqs_armbian.rc == 0
+
+# TODO: Add check for iptables legacy mode
+# https://rolandschnabel.de/blog/2018/11/iptables-block-traffic-by-country-debian-9/
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#ensure-iptables-tooling-does-not-use-the-nftables-backend
+
+# TODO: Add check for CGROUP_MEMORY
+# https://github.com/kubernetes/kubernetes/issues/54914
+# See Google Doc for manual steps to fix (/boot/firmware/usercfg.txt; cmdline)

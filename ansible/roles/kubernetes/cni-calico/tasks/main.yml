@@ -6,7 +6,7 @@
 
   - name: kubernetes/cni-calico | grab the yaml
     get_url:
-      url: https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+      url: https://docs.projectcalico.org/v3.11/manifests/calico.yaml
       dest: "{{ _mktemp.stdout }}"
 
   - name: kubernetes/cni-calico | regex changes

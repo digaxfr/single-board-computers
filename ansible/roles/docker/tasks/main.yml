@@ -20,9 +20,12 @@
       name: "{{ _mktemp.stdout }}"
       state: absent
 
+# FIXME: Hard coded 'disco' because there is no 'eoan' repo yet; community says 'disco' repo is usable for now
+# FIXME: Hard coded 'ubuntu'
 - name: docker | add apt repo
   apt_repository:
-    repo: deb [arch=arm64] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
+    #repo: deb [arch=arm64] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
+    repo: deb [arch=arm64] https://download.docker.com/linux/ubuntu disco stable
 
 - name: docker | install docker-ce
   apt:

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 function help() {
     echo "  Usage: $0"
     echo "    Must be run as root."
@@ -17,11 +19,20 @@ function debian() {
     apt-get install -y qemu-user-static qemu-efi-arm qemu-system-arm qemu-efi-aarch64
 }
 
+function fedora() {
+    dnf -y install qemu qemu-kvm qemu-user-static
+}
+
 function main() {
     # Get the distribution
     DISTRO=$(lsb_release -i -s)
     if [ "${DISTRO}" == "Debian" ]; then
         debian
+    elif [ "${DISTRO}" == "Fedora" ]; then
+        fedora
+    else
+        echo "No supported host OS found!"
+        exit 1
     fi
 }
 

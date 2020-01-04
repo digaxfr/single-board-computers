@@ -1,5 +1,6 @@
-odroidn2-01.srv.dchin.dev
-rock64-01.srv.dchin.dev
+#odroidn2-01.srv.dchin.dev
+#rock64-01.srv.dchin.dev
+rpi4b-4-01.srv.dchin.dev ansible_host=192.168.1.193 ansible_user=ubuntu
 
-[dns]
-rock64-01.srv.dchin.dev
+#[dns]
+#rock64-01.srv.dchin.dev

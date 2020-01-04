@@ -3,9 +3,9 @@
   gather_facts: yes
   become: yes
   roles:
-  - hostname
-  - packages
-  - docker
+#  - hostname
+#  - packages
+#  - docker
   - kubernetes/apt
   - kubernetes/pre-reqs
   - kubernetes/init
