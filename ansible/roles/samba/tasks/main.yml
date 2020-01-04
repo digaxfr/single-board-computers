@@ -1,0 +1,62 @@
+---
+- name: samba | install packages
+  dnf:
+    name: '{{ samba_packages }}'
+    state: present
+
+- name: samba | template configuration file
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart samba
+
+# Using firewall-cmd CLI rather than Ansible modules so I can learn firewall-cmd.
+# Also all changes are runtime only because this is for my personal laptop. The
+# idea is to run this playbook when I want to turn on CIFS access when at home.
+- name: samba | firewalld, get default zone
+  command: >
+    firewall-cmd --get-default-zone
+  register: _firewalld_default_zone
+
+# Just check that our active zone matches the default zone (this implies I am
+# at home).
+- name: samba | firewalld, get active zones
+  command: >
+    firewall-cmd --get-active-zones
+  register: _firewalld_active_zones
+
+- name: samba | fail if firewalld zones are mismatching
+  fail:
+  when: _firewalld_default_zone.stdout not in _firewalld_active_zones.stdout_lines
+
+# If it does not exist, then that means your default install is messed up.
+- name: samba | check that the samba firewalld service exists
+  command: >
+    firewall-cmd --info-service samba
+
+- name: samba | firewalld changes
+  command: >
+    {{ item }}
+  with_items:
+  - firewall-cmd --zone={{ _firewalld_default_zone.stdout }} --add-service=samba
+
+- name: samba | selinux booleans
+  command: >
+    {{ item }}
+  with_items:
+  - setsebool samba_enable_home_dirs 1
+
+# It's not set to enabled on boot because this is for my pesronal laptop.
+- name: samba | enable services
+  systemd:
+    name: smb
+    state: started
+    enabled: no
+
+# smbpasswd user additions are not automated.
+- name: samba | smbpasswd
+  debug:
+    msg: "If you have not done so, remember to add your samba user with 'smbpasswd -a <user>'"
