@@ -20,18 +20,18 @@
       name: "{{ _mktemp.stdout }}"
       state: absent
 
-# FIXME: Hard coded 'disco' because there is no 'eoan' repo yet; community says 'disco' repo is usable for now
-# FIXME: Hard coded 'ubuntu'
+# Designed for Raspian at the moment
 - name: docker | add apt repo
   apt_repository:
-    #repo: deb [arch=arm64] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
-    repo: deb [arch=arm64] https://download.docker.com/linux/ubuntu disco stable
+    repo: deb [arch=armhf] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
 
+# install_recommends is set to no because that is what get.docker.com does as of this writing (aufs dkms issue)
 - name: docker | install docker-ce
   apt:
-    name: docker-ce
+    name: '{{ docker_pkgs }}'
     state: present
     state: present
+    install_recommends: no
 
 - name: docker | template out daemon.json
   template:

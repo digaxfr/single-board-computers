@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Note that the BOARD variable isn't actually used yet. This is in anticipation
 # for when Raspbian will offer a arm64 release for the rpi4b.
 BOARD=$1
@@ -41,7 +40,7 @@ dd if=/dev/zero bs=1M count=2048 >> *.img
     echo p      # Primary
     echo 2      # Partitoin 1
     if [ "${BOARD}" == "rpi4b" ]; then
-        echo 540672   # Start at sector 540672
+        echo 532480   # Start at sector 532480 - As of 2019-01-10
     fi
     echo ""     # End sector is 100%
     echo w      # Write changes
@@ -65,6 +64,7 @@ mount --bind /etc/resolv.conf mnt/etc/resolv.conf
 # Make the customizations required
 chroot mnt usermod -l digaxfr pi
 chroot mnt usermod -m -d /home/digaxfr digaxfr
+# Set the password via Ansible as part of deployments... if I really care that much
 chroot mnt passwd --delete digaxfr
 chroot mnt groupmod -n digaxfr pi
 chroot mnt apt-get -y upgrade

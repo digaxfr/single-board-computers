@@ -1,9 +1,9 @@
-#odroidn2-01.srv.dchin.dev
-#rock64-01.srv.dchin.dev
-rpi4b-4-01.srv.dchin.dev ansible_host=192.168.1.193 ansible_user=ubuntu
-
-#[dns]
-#rock64-01.srv.dchin.dev
+# Got to do this because I am too lazy to setup DNS
+failxps.localdomain ansible_host=127.0.0.1 ansible_connection=local
+rpi4b-4-01.srv.dchin.dev ansible_host=192.168.1.193 ansible_user=digaxfr
 
 [samba]
-failxps.localdomain ansible_host=127.0.0.1 ansible_user=dchin ansible_connection=local
+failxps.localdomain
+
+[rpi4]
+rpi4b-4-01.srv.dchin.dev
