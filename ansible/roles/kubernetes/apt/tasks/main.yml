@@ -7,11 +7,11 @@
   - name: kubernetes/apt | copy apt key
     copy:
       src: apt-key.gpg
-      dest: "{{ _mktemp.stdout }}"
+      dest: '{{ _mktemp.stdout }}'
 
   - name: kubernetes/apt | add apt key
     apt_key:
-      file: "{{ _mktemp.stdout }}/apt-key.gpg"
+      file: '{{ _mktemp.stdout }}/apt-key.gpg'
       state: present
 
 # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
@@ -21,7 +21,7 @@
 
   - name: kubernetes/apt | install packages
     apt:
-      name: "{{ kubernetes_packages }}"
+      name: '{{ kubernetes_packages }}'
       state: present
 
   - name: kubernetes/apt | mark packages
@@ -30,5 +30,5 @@
   always:
   - name: kubernetes/apt | cleanup
     file:
-      name: "{{ _mktemp.stdout }}"
+      name: '{{ _mktemp.stdout }}'
       state: absent

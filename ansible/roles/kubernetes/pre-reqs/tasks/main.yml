@@ -10,7 +10,7 @@
 
   - name: kubernetes/pre-reqs | systemctl stop
     systemd:
-      name: "{{ item }}"
+      name: '{{ item }}'
       state: stopped
       enabled: no
     with_items:
@@ -18,10 +18,17 @@
     - armbian-zram-config
   when: _prereqs_armbian.rc == 0
 
-# TODO: Add check for iptables legacy mode
-# https://rolandschnabel.de/blog/2018/11/iptables-block-traffic-by-country-debian-9/
-# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#ensure-iptables-tooling-does-not-use-the-nftables-backend
+# TODO: Assume Raspian all the time?
+- name: kubernetes/pre-reqs | setup iptables legacy mode
+  command: '{{ item }}'
+  with_items:
+  - update-alternatives --set iptables /usr/sbin/iptables-legacy
+  - update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+  - update-alternatives --set arptables /usr/sbin/arptables-legacy
+  - update-alternatives --set ebtables /usr/sbin/ebtables-legacy
 
-# TODO: Add check for CGROUP_MEMORY
-# https://github.com/kubernetes/kubernetes/issues/54914
-# See Google Doc for manual steps to fix (/boot/firmware/usercfg.txt; cmdline)
+- name: kubernetes/pre-reqs | disable swap
+  systemd:
+    name: dphys-swapfile
+    state: stopped
+    enabled: no

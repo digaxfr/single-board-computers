@@ -1,5 +1,7 @@
 ---
 kubernetes_packages:
+- arptables
+- iptables
 - kubeadm
 - kubectl
 - kubelet

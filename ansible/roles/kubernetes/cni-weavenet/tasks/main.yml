@@ -1,0 +1,27 @@
+---
+# https://www.weave.works/docs/net/latest/kubernetes/kube-addon/
+
+# Couldn't figure out how to get b64encode filter to chomp
+- name: kubernetes/cni-weavenet | get kubectl version
+  shell: >
+    kubectl version | base64 -w0
+  register: _kubectl_version
+
+- block:
+  - name: kubernetes/cni-weavenet | mktemp
+    command: mktemp -d
+    register: _mktemp
+
+  - name: kubernetes/cni-weavenet | grab the yaml
+    get_url:
+      url: https://cloud.weave.works/k8s/net?k8s-version={{ _kubectl_version.stdout }}
+      dest: "{{ _mktemp.stdout }}/weavenet.yaml"
+
+  - name: kubernetes/cni-weavenet | apply
+    command: kubectl apply -f {{ _mktemp.stdout }}/weavenet.yaml
+
+  always:
+  - name: kubernetes/cni-weavenet | cleanup
+    file:
+      path: "{{ _mktemp.stdout }}"
+      state: absent

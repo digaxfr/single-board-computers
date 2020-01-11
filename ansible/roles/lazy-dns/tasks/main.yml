@@ -1,0 +1,8 @@
+---
+- name: lazy-dns | lol
+  lineinfile:
+    path: /etc/hosts
+    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}'
+  with_items: '{{ groups.all }}'
+  when: "'failxps.localdomain' not in item"
+  # ^Do you like cheap crap? Because that's cheap crap. I have my reasons.

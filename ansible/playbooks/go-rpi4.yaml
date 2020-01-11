@@ -3,10 +3,11 @@
   gather_facts: yes
   become: yes
   roles:
+  - lazy-dns
   - hostname
   - packages
   - docker
-#  - kubernetes/apt
-#  - kubernetes/pre-reqs
-#  - kubernetes/init
-#  - kubernetes/cni-calico
+  - kubernetes/apt
+  - kubernetes/pre-reqs
+  - kubernetes/init
+  - kubernetes/cni-weavenet
