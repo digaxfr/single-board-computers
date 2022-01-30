@@ -7,6 +7,8 @@ set -ex
 BOARD=$1
 LOSETUP=$(which losetup)
 
+export PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin
+
 function help() {
     echo "  Usage: $0 <board>"
     echo "    Must be run as root."
@@ -69,6 +71,7 @@ chroot mnt usermod -m -d /home/digaxfr digaxfr
 # Set the password via Ansible as part of deployments... if I really care that much
 chroot mnt passwd --delete digaxfr
 chroot mnt groupmod -n digaxfr pi
+chroot mnt apt-get update
 chroot mnt apt-get -y upgrade
 chroot mnt apt-get -y install openssh-server vim
 chroot mnt apt-get clean
@@ -80,7 +83,7 @@ chroot mnt systemctl enable ssh
 chroot mnt mkdir -p /home/digaxfr/.ssh
 chroot mnt chmod 0700 /home/digaxfr/.ssh
 chroot mnt tee /home/digaxfr/.ssh/authorized_keys << "EOF"
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0OqzFm/vPZQoMr8kzWHH4wuBf24GXCQNwbO0w9GHJVdmEdhVecUNoVsPPzwj/aHpuY4daxnAxvOVPJdGLszUNSkRvPYnLgl77Zw0WXEVSIk8ReOaFMcLkwOX8FjaRzPoxTMG+BpfJZMHLWvBnIjywvvg5rr8eF2V1PScWCELvkWoZ3haXjVTb0G+0Wb3AhS+PEEGi0jxmkPQwktW31EdbMqQgZtiV3A+iPsHx/q1kB9kOQrGCLfk9ZKxP64w+RMimsw+J42F07wrX9LQ76g8bW5lZpvoZtcRgBweuGPjwNEn/QFdZ6T8pOjdAbbJyvTn680J/2EjRPd2zbKCP43yr darrenchin@MacFailPro.local
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOVugR+fcz9NY1mXzL/V4O24Vt+HKeE+HJMAq9kapk1H darrenchin@ryzenfail.dchin.dev
 EOF
 chroot mnt chmod 600 /home/digaxfr/.ssh/authorized_keys
 chroot mnt chown digaxfr: /home/digaxfr/.ssh/
