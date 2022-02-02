@@ -56,3 +56,9 @@ Need to use specific algo for crypt on raspberrypi for hwaccel
 cryptsetup --type luks2 --cipher xchacha20,aes-adiantum-plain64 --hash sha256 --iter-time 5000 –keysize 256 --pbkdf argon2i luksFormat /dev/mmcblk0p2
 
 Can extend luks volume with cryptsetup resize, but it might be safest to build tooling on preparing the sdcard appropriately, then rsync the data.
+
+```
+Device     Boot  Start     End Sectors  Size Id Type
+/dev/sdb1         8192  532479  524288  256M  c W95 FAT32 (LBA)
+/dev/sdb2       532480 8388607 7856128  3.7G 83 Linux
+```
