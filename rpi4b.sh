@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#set -e
+set -ex
 
 export PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin
 
@@ -54,7 +54,7 @@ function chroot_config() {
     chroot ${mount_target} passwd --delete digaxfr
     chroot ${mount_target} groupmod -n digaxfr pi
     chroot ${mount_target} apt-get update
-#    chroot ${mount_target} apt-get -y upgrade
+    chroot ${mount_target} apt-get -y upgrade
     chroot ${mount_target} apt-get -y install \
         busybox \
         cryptsetup \
@@ -131,6 +131,7 @@ function copy_data() {
     # Copy boot and os data
     rsync -avh ${mount_image}/boot/ ${mount_target}/boot
     rsync -avh ${mount_image}/ ${mount_target}/
+}
 
 function get_options() {
     local OPTIND OPTARG
