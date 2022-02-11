@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 export PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin
 
@@ -54,7 +54,7 @@ function chroot_config() {
     chroot ${mount_target} passwd --delete digaxfr
     chroot ${mount_target} groupmod -n digaxfr pi
     chroot ${mount_target} apt-get update
-    chroot ${mount_target} apt-get -y upgrade
+#    chroot ${mount_target} apt-get -y upgrade
     chroot ${mount_target} apt-get -y install \
         busybox \
         cryptsetup \

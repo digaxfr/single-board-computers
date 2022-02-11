@@ -1,4 +1,7 @@
 #!/bin/bash
+# Post kernel install script that will ensure the proper values are set for config.txt and cmdline.txt
+#
+# Should be placed in /etc/kernel/postinst.d
 
 # Get the new kernel version
 kernel_version=$(ls /lib/modules)
