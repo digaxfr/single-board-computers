@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Get the new kernel version
+kernel_version=$(ls /lib/modules)
+
+echo "Found Kernel version ${kernel_version}"
+
+# Fix config.txt
+echo "Updating /boot/config.txt"
+sed -i "s/initramfs.*$/initramfs initrd.img-${kernel_version} followkernel/g" /boot/config.txt

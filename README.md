@@ -62,3 +62,5 @@ Device     Boot  Start     End Sectors  Size Id Type
 /dev/sdb1         8192  532479  524288  256M  c W95 FAT32 (LBA)
 /dev/sdb2       532480 8388607 7856128  3.7G 83 Linux
 ```
+
+* Only the latest kernel modules are kept, so automating initramfs config.txt should be easy
