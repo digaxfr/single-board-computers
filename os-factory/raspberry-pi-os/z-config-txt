@@ -1,0 +1,17 @@
+#!/bin/bash
+# Post kernel install script that will ensure the proper values are set for config.txt and cmdline.txt
+#
+# Should be placed in /etc/kernel/postinst.d
+
+# Get the new kernel version
+kernel_version=$(ls /lib/modules)
+
+echo "Found Kernel version ${kernel_version}"
+
+# Fix config.txt
+echo "Updating /boot/config.txt"
+sed -i "s/initramfs.*$/initramfs initrd.img-${kernel_version} followkernel/g" /boot/config.txt
+
+# Rewrite cmdline.txt
+echo "Updating /boot/cmdline.txt"
+echo "console=ttyS0,115200 root=/dev/mapper/rpi-root cryptdevice=/dev/mmcblk0p2:rpi-root rootfstype=ext4 fsck.repair=yes rootwait" > /boot/cmdline.txt
