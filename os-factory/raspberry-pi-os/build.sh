@@ -85,7 +85,7 @@ EOF
     fi
     echo "enable_uart=1" >> ${mount_target}/boot/config.txt
     echo "initramfs initramfs.gz followkernel" >> ${mount_target}/boot/config.txt
-    echo "console=ttyS0,115200 root=/dev/mapper/rpi-root cryptdevice=/dev/mmcblk0p2:rpi-root rootfstype=ext4 fsck.repair=yes rootwait" > ${mount_target}/boot/cmdline.txt
+    echo "console=ttyS0,115200 root=/dev/mapper/rpi-root cryptdevice=/dev/mmcblk0p2:rpi-root rootfstype=ext4 fsck.repair=yes rootwait cgroup_memory=1 cgroup_enable=memory" > ${mount_target}/boot/cmdline.txt
     sed -i 's/^#INITRD.*/INITRD=Yes/g' ${mount_target}/etc/default/raspberrypi-kernel
     cp z-config-txt ${mount_target}/etc/kernel/postinst.d/
     chmod +x ${mount_target}/etc/kernel/postinst.d/z-config-txt
