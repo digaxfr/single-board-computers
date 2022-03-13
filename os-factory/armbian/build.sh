@@ -4,7 +4,7 @@ set -e
 
 export PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin
 
-boards=("odroidn2")
+boards=("odroidn2" "rock64")
 mount_image="/tmp/sbc-factory/image"
 mount_target="/tmp/sbc-factory/target"
 ssh_pub_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOVugR+fcz9NY1mXzL/V4O24Vt+HKeE+HJMAq9kapk1H darrenchin@ryzenfail.dchin.dev"
@@ -61,10 +61,10 @@ function chroot_config() {
     sed -i 's/console=.*/console=serial/g' ${mount_target}/boot/armbianEnv.txt
     sed -i 's/rootdev=.*/rootdev=\/dev\/mapper\/sbc-root/g' ${mount_target}/boot/armbianEnv.txt
     rm -f ${mount_target}/root/.not_logged_in_yet
-    rm -f /etc/systemd/system/sysinit.target.wants/armbian-zram-config.service
-    rm -f /etc/systemd/system/sysinit.target.wants/armbian-ramlog.service
-    rm -f /etc/systemd/system/basic.target.wants/armbian-resize-filesystem.service
-    rm -f /etc/systemd/system/multi-user.target.wants/armbian-firstrun-config.service
+    rm -f ${mount_target}/etc/systemd/system/sysinit.target.wants/armbian-zram-config.service
+    rm -f ${mount_target}/etc/systemd/system/sysinit.target.wants/armbian-ramlog.service
+    rm -f ${mount_target}/etc/systemd/system/basic.target.wants/armbian-resize-filesystem.service
+    rm -f ${mount_target}/etc/systemd/system/multi-user.target.wants/armbian-firstrun-config.service
 
     if [[ ${board} == "odroidn2" ]]; then
         sed -i 's/MAX_SPEED=.*/MAX_SPEED=1800000/' ${mount_target}/etc/default/cpufrequtils
@@ -196,9 +196,34 @@ case ${board} in
             echo w      # Write changes
         ) | fdisk -w always -W always ${disk}
         ;;
+
+    rock64)
+        dd if=${image} of=${disk} bs=512 count=32767
+        sleep 1
+        partprobe
+        (
+            echo o      # Fresh DOS partition table
+            echo n      # Create new partition
+            echo p      # Primary
+            echo 1      # Partitoin 1
+            echo 32768  # Start at sector 32768
+            echo 557055 # End at sector 557055
+            echo n      # New partition
+            echo p      # Primary
+            echo 2      # Partition 2
+            echo 557056 # Start after the first partition
+            echo ""     # End sector is 100%
+            echo w      # Write changes
+        ) | fdisk -w always -W always ${disk}
+        ;;
 esac
 
-    echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup luksFormat ${disk}2 '-'
+    if [[ ${board} == "rock64" || ${board} == "odroidn2" ]]; then
+        echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha512 --pbkdf-memory 512000 ${disk}2 '-'
+    else
+        echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup luksFormat ${disk}2 '-'
+    fi
+
     echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup open ${disk}2 sbc-root
     mkfs.ext4 -L SBC_ROOT /dev/mapper/sbc-root
     mkfs.ext4 -L SBC_BOOT ${disk}1

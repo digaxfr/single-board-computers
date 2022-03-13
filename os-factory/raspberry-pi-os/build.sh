@@ -173,7 +173,7 @@ function prepare_disk() {
     echo w      # Write changes
 ) | fdisk -w always -W always ${disk}
 
-    cryptsetup luksFormat ${disk}2
+    cryptsetup luksFormat -c xchacha20,aes-adiantum-plain64 --pbkdf-memory 512000 ${disk}2
     cryptsetup open ${disk}2 rpi-root
     mkfs.ext4 /dev/mapper/rpi-root
     mkfs.vfat -F32 ${disk}1
