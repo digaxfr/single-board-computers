@@ -4,9 +4,16 @@ set -e
 
 export PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin
 
-mount_image="/tmp/rpi-factory/image"
-mount_target="/tmp/rpi-factory/target"
+boards=("rockpi-4b")
+mount_image="/tmp/sbc-factory/image"
+mount_target="/tmp/sbc-factory/target"
+
+dropbear_pub_key="ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN19s2s2hiWF6gxZkfgNuxarSUE1n4cfj9xJqc8JlterzCqtyuDI99ivCKKTwzVPEiDgjHIRe0pukVzrKgtoLxY= darrenchin@failxps.dchin.dev"
 ssh_pub_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOVugR+fcz9NY1mXzL/V4O24Vt+HKeE+HJMAq9kapk1H darrenchin@ryzenfail.dchin.dev"
+
+# DEBUG
+#loop_new_image=/dev/loop0
+#loop=/dev/loop1
 
 function check_options() {
     if [ ${UID} -ne 0 ]; then
@@ -19,13 +26,13 @@ function check_options() {
         exit 1
     fi
 
-    if [[ -z ${disk} ]]; then
-        echo "-d <disk> needs to be supplied"
+    if [[ -z ${board} ]]; then
+        echo "-b <board-name> needs to be supplied"
         exit 1
     fi
 
-    if [[ ! $(lsblk ${disk} 2>/dev/null) ]]; then
-        echo "Invalid disk supplied: ${disk}"
+    if [[ ! "${boards[*]}" =~ "${board}" ]]; then
+        echo "${board} is not a valid board"
         exit 1
     fi
 
@@ -47,6 +54,21 @@ function check_options() {
 }
 
 function chroot_config() {
+    rm -f ${mount_target}/etc/systemd/system/display-manager.service
+    tee /etc/systemd/system/fix-network-module.service << EOF
+[Unit]
+Description=Reload networking module for workaround
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/sbin/rmmod dwmac_rk
+ExecStartPost=/usr/sbin/modprobe dwmac_rk
+
+[Install]
+WantedBy=basic.target
+EOF
+
     # Set up the chroot
     mount -t proc proc ${mount_target}/proc
     mount -t sysfs sysfs ${mount_target}/sys
@@ -54,10 +76,10 @@ function chroot_config() {
     mount -t tmpfs tmpfs ${mount_target}/dev/shm
     mount -t devpts devpts ${mount_target}/dev/pts
     mount --bind /etc/resolv.conf ${mount_target}/etc/resolv.conf
-    chroot ${mount_target} usermod -l digaxfr pi
-    chroot ${mount_target} usermod -m -d /home/digaxfr digaxfr
-    chroot ${mount_target} passwd --delete digaxfr
-    chroot ${mount_target} groupmod -n digaxfr pi
+    chroot ${mount_target} usermod -d /home/digaxfr -m -l digaxfr rock
+    chroot ${mount_target} usermod -a -G sudo digaxfr
+    chroot ${mount_target} apt-get -y purge xfce* xserver* firefox* chromium* desktop-base desktop-file-utils *-icon-theme lightdm x11-* xfdesktop4
+    chroot ${mount_target} apt autoremove -y
     chroot ${mount_target} apt-get update
     chroot ${mount_target} apt-get -y upgrade
     chroot ${mount_target} apt-get -y install \
@@ -66,12 +88,16 @@ function chroot_config() {
         cryptsetup-initramfs \
         dropbear \
         dropbear-initramfs \
+        locales-all \
         openssh-server \
         vim
     chroot ${mount_target} apt-get clean
     echo "en_US.UTF-8 UTF-8" >> ${mount_target}/etc/locale.gen
-    chroot ${mount_target} locale-gen
-    chroot ${mount_target} update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
+#    chroot ${mount_target} locale-gen
+#    chroot ${mount_target} update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
+#    chroot ${mount_target} localectl set-locale en_US.utf8
+    chroot ${mount_target} ln -fs /lib/systemd/system/multi-user.target /etc/systemd/system/default.target
+    chroot ${mount_target} ln -fs /etc/systemd/system/fix-network-module.service /etc/systemd/system/basic.target.wants/fix-network-module.service
     chroot ${mount_target} ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
     chroot ${mount_target} systemctl enable ssh
     chroot ${mount_target} mkdir -p /home/digaxfr/.ssh
@@ -88,27 +114,19 @@ EOF
         cp ../wpa_supplicant.conf ${mount_target}/boot/wpa_supplicant.conf
         chmod 600 ${mount_target}/boot/wpa_supplicant.conf
     fi
-    echo "enable_uart=1" >> ${mount_target}/boot/config.txt
-    echo "initramfs initramfs.gz followkernel" >> ${mount_target}/boot/config.txt
-    echo "console=ttyS0,115200 root=/dev/mapper/rpi-root cryptdevice=/dev/mmcblk0p2:rpi-root rootfstype=ext4 fsck.repair=yes rootwait cgroup_memory=1 cgroup_enable=memory" > ${mount_target}/boot/cmdline.txt
-    sed -i 's/^#INITRD.*/INITRD=Yes/g' ${mount_target}/etc/default/raspberrypi-kernel
-    cp z-config-txt ${mount_target}/etc/kernel/postinst.d/
-    chmod +x ${mount_target}/etc/kernel/postinst.d/z-config-txt
     chroot ${mount_target} update-alternatives --set editor /usr/bin/vim.basic
-    chroot ${mount_target} ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
     # Encryption setup
     tee ${mount_target}/etc/fstab << EOF
-proc                    /proc   proc    defaults            0   0
-/dev/mmcblk0p1          /boot   vfat    defaults            0   2
-/dev/mapper/rpi-root    /       ext4    defaults,noatime    0   1
+/dev/mmcblk2p4          /boot   ext4    defaults,noatime,nodiratime,commit=60,errors=remount-ro 0 2
+/dev/mapper/sbc-root    /       ext4    defaults,noatime,nodiratime,commit=60,errors=remount-ro 0 1
 EOF
     tee ${mount_target}/etc/crypttab << EOF
-rpi-root /dev/mmcblk0p2 none luks
+sbc-root /dev/mmcblk2p5 none luks
 EOF
     echo "CRYPTSETUP=y" >> ${mount_target}/etc/cryptsetup-initramfs/conf-hook
-    echo "${ssh_pub_key}" >> ${mount_target}/etc/dropbear-initramfs/authorized_keys
+    echo "${dropbear_pub_key}" >> ${mount_target}/etc/dropbear-initramfs/authorized_keys
     kernel_version=$(ls -tr ${mount_target}/lib/modules | head -n1)
-    chroot ${mount_target} mkinitramfs -o /boot/initramfs.gz ${kernel_version}
+    chroot ${mount_target} /usr/sbin/mkinitramfs -o /boot/initrd.img-${kernel_version} ${kernel_version}
     chroot ${mount_target} sync
     sync
 }
@@ -118,6 +136,8 @@ function cleanup() {
     umount -R ${mount_target}
     rmdir ${mount_image} ${mount_target}
     losetup -d ${loop}
+    cryptsetup close sbc-root
+    losetup -d ${loop_new_image}
 }
 
 function copy_data() {
@@ -127,24 +147,31 @@ function copy_data() {
 
     # Mount it
     mkdir -p ${mount_image}
-    mount ${loop}p2 ${mount_image}
-    mount ${loop}p1 ${mount_image}/boot
+    mount ${loop}p5 ${mount_image}
+    mount ${loop}p4 ${mount_image}/boot
 
     # Now mount our target
     mkdir -p ${mount_target}
-    mount /dev/mapper/rpi-root ${mount_target}
+    mount /dev/mapper/sbc-root ${mount_target}
     mkdir ${mount_target}/boot
-    mount ${disk}1 ${mount_target}/boot
+    mount ${loop_new_image}p4 ${mount_target}/boot
 
     # Copy boot and os data
-    rsync -avh ${mount_image}/boot/ ${mount_target}/boot
     rsync -avh ${mount_image}/ ${mount_target}/
+
+    # Write the boot partitions
+    dd if=${loop}p1 of=${loop_new_image}p1
+    dd if=${loop}p2 of=${loop_new_image}p2
+    dd if=${loop}p3 of=${loop_new_image}p3
 }
 
 function get_options() {
     local OPTIND OPTARG
-    while getopts ":hd:i:" arg; do
+    while getopts ":hb:d:i:" arg; do
         case ${arg} in
+            b)
+                board=${OPTARG}
+                ;;
             d)
                 disk=${OPTARG}
                 ;;
@@ -160,28 +187,52 @@ function get_options() {
 }
 
 function prepare_disk() {
-(
-    echo o      # Fresh DOS partition table
-    echo n      # Create new partition
-    echo p      # Primary
-    echo 1      # Partitoin 1
-    echo 8192   # Start at sector 8192
-    echo 532479 # End at sector 532479
-    echo n      # New partition
-    echo p      # Primary
-    echo 2      # Partition 2
-    echo 532480 # Start after the first partition
-    echo ""     # End sector is 100%
-    echo t      # Change partition type
-    echo 1      # Partition 1
-    echo 0c     # W95 LBA
-    echo w      # Write changes
-) | fdisk -w always -W always ${disk}
+    # Create our dummy image file
+    dd if=/dev/zero of=rockpi-4b.img bs=1M count=4096
+    (
+        echo x      # Expert menu
+        echo l      # Change alignment
+        echo 64     # Start on sector 64
+        echo m      # Go back to main menu
+        echo n      # New partition
+        echo 1      # Partition 1
+        echo 64
+        echo 8063
+        echo 0700
+        echo n
+        echo 2
+        echo 16384
+        echo 24575
+        echo 0700
+        echo n
+        echo 3
+        echo 24576
+        echo 32767
+        echo 0700
+        echo n
+        echo 4
+        echo 32768
+        echo 1081343
+        echo EF00
+        echo n
+        echo 5
+        echo 1081344
+        echo ""
+        echo 8309
+        echo w
+        echo Y
+    ) | gdisk ./rockpi-4b.img
 
-    echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup luksFormat -c xchacha20,aes-adiantum-plain64 --pbkdf-memory 512000 ${disk}2 '-'
-    echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup open ${disk}2 rpi-root '-'
-    mkfs.ext4 /dev/mapper/rpi-root
-    mkfs.vfat -F32 ${disk}1
+    # Mount the image as a loopback
+    loop_new_image=$(losetup -f)
+    losetup -P ${loop_new_image} ./rockpi-4b.img
+
+    echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha512 --pbkdf-memory 512000 ${loop_new_image}p5 '-'
+    echo -n ${BUILD_CRYPT_PASSWORD} | cryptsetup open ${loop_new_image}p5 sbc-root
+
+    # Too lazy to make it dynamic. The UUID will need to be changed if a newer image is used.
+    mkfs.ext4 -L root -U 1c1fc7a2-aa70-4951-a076-96f709819b01 /dev/mapper/sbc-root
+    mkfs.ext4 -L boot ${loop_new_image}p4
 }
 
 function print_help() {

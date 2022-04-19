@@ -1,8 +1,9 @@
-odroidn2/
-rock64/
-ansible.log
+*.img
 *.retry
 *.swp
+ansible.log
 debs/*.deb
+odroidn2/
+rock64/
 rpi4b/
 wpa_supplicant.conf
