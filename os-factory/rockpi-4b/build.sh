@@ -55,7 +55,59 @@ function check_options() {
 
 function chroot_config() {
     rm -f ${mount_target}/etc/systemd/system/display-manager.service
-    tee /etc/systemd/system/fix-network-module.service << EOF
+
+    # Use our own resizer
+    rm -f ${mount_target}/etc/systemd/system/basic.target.wants/resize-assistant.service
+    tee ${mount_target}/etc/systemd/system/digaxfr-resizer.service << EOF
+[Unit]
+Description=Resize root filesystem to fit available disk space
+After=systemd-remount-fs.service
+
+[Service]
+Type=oneshot
+ExecStart=-/root/digaxfr-resizer.sh
+ExecStart=-/usr/bin/rm /root/digaxfr-resizer.sh
+ExecStartPost=/bin/systemctl disable digaxfr-resizer.service
+
+[Install]
+WantedBy=basic.target
+EOF
+
+    tee ${mount_target}/root/digaxfr-resizer.sh << EOF
+#!/bin/bash
+
+# Fix GPT partition
+sgdisk -e /dev/mmcblk2
+
+# Resize the root partition
+(
+    echo d
+    echo 5
+    echo n
+    echo ""
+    echo ""
+    echo ""
+    echo ""
+    echo w
+    echo y
+) | gdisk /dev/mmcblk2
+
+# Kernel refresh
+partprobe
+
+# Resize LUKS
+echo '${BUILD_CRYPT_PASSWORD}' | cryptsetup resize /dev/mapper/sbc-root
+
+# Kernel refresh again for good measure
+partprobe
+
+# Resize filesytem
+resize2fs /dev/mapper/sbc-root
+EOF
+    chmod +x ${mount_target}/root/digaxfr-resizer.sh
+
+    # Workaround for eth issue
+    tee ${mount_target}/etc/systemd/system/digaxfr-net-mod.service << EOF
 [Unit]
 Description=Reload networking module for workaround
 Before=network-pre.target
@@ -81,8 +133,8 @@ EOF
     chroot ${mount_target} apt-get -y purge xfce* xserver* firefox* chromium* desktop-base desktop-file-utils *-icon-theme lightdm x11-* xfdesktop4
     chroot ${mount_target} apt autoremove -y
     chroot ${mount_target} apt-get update
-    chroot ${mount_target} apt-get -y upgrade
-    chroot ${mount_target} apt-get -y install \
+    DEBIAN_FRONTEND=noninteractive chroot ${mount_target} apt-get -q -y upgrade
+    DEBIAN_FRONTEND=noninteractive chroot ${mount_target} apt-get -q -y install \
         busybox \
         cryptsetup \
         cryptsetup-initramfs \
@@ -97,7 +149,8 @@ EOF
 #    chroot ${mount_target} update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
 #    chroot ${mount_target} localectl set-locale en_US.utf8
     chroot ${mount_target} ln -fs /lib/systemd/system/multi-user.target /etc/systemd/system/default.target
-    chroot ${mount_target} ln -fs /etc/systemd/system/fix-network-module.service /etc/systemd/system/basic.target.wants/fix-network-module.service
+    chroot ${mount_target} ln -fs /etc/systemd/system/digaxfr-net-mode.service /etc/systemd/system/basic.target.wants/digaxfr-net-mod.service
+    chroot ${mount_target} ln -fs /etc/systemd/system/digaxfr-resizer.service /etc/systemd/system/basic.target.wants/digaxfr-resizer.service
     chroot ${mount_target} ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
     chroot ${mount_target} systemctl enable ssh
     chroot ${mount_target} mkdir -p /home/digaxfr/.ssh
