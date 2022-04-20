@@ -66,7 +66,6 @@ After=systemd-remount-fs.service
 [Service]
 Type=oneshot
 ExecStart=-/root/digaxfr-resizer.sh
-ExecStart=-/usr/bin/rm /root/digaxfr-resizer.sh
 ExecStartPost=/bin/systemctl disable digaxfr-resizer.service
 
 [Install]
@@ -75,6 +74,10 @@ EOF
 
     tee ${mount_target}/root/digaxfr-resizer.sh << EOF
 #!/bin/bash
+
+# Cheap work around, first boot reboots, so we do a sleep so the script doesn't get interrupted by the reboot.
+# On second boot, it will sleep again, but at least the script wiill finish this time around.
+sleep 120
 
 # Fix GPT partition
 sgdisk -e /dev/mmcblk2
@@ -103,6 +106,9 @@ partprobe
 
 # Resize filesytem
 resize2fs /dev/mapper/sbc-root
+
+# Remove ourself
+rm /root/digaxfr-resizer.sh
 EOF
     chmod +x ${mount_target}/root/digaxfr-resizer.sh
 
