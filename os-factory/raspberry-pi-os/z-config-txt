@@ -4,7 +4,7 @@
 # Should be placed in /etc/kernel/postinst.d
 
 # Get the new kernel version
-kernel_version=$(ls /lib/modules)
+kernel_version=$(ls /lib/modules | tail -n1)
 
 echo "Found Kernel version ${kernel_version}"
 

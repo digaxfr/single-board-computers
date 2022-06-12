@@ -140,3 +140,20 @@ partprobe
 # Resize filesytem
 resize2fs /dev/mapper/sbc-root
 ```
+
+### Wi-FI and BT
+
+Seems to be missing firmware. Some of it is included at `/system/etc...` but it is not loaded/fails.
+
+There is also a systemd unit for broadcom stuff. Doesn't seem to work.
+
+Wi-Fi seems to work after pulling down firmware manually.
+
+```
+  195  cd /lib/firmware/brcm/
+  196  ls
+  197  curl -O -L https://github.com/RPi-Distro/firmware-nonfree/raw/buster/brcm/brcmfmac43456-sdio.bin
+  198  ls -hal
+  199  curl -O -L https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/buster/brcm/brcmfmac43456-sdio.txt
+  200  curl -O -L https://github.com/RPi-Distro/firmware-nonfree/raw/buster/brcm/brcmfmac43456-sdio.clm_blob
+```
